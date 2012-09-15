@@ -12,6 +12,8 @@ import android.app.ActivityManager.RunningServiceInfo;
 import android.content.Intent;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemProperties;
@@ -37,6 +39,7 @@ public class MainActivity extends Activity {
     }
     
     boolean mDestroyed = false;
+    boolean useRoot = false;
     @Override
     protected void onDestroy() {
         mDestroyed = true;
@@ -59,7 +62,11 @@ public class MainActivity extends Activity {
                     stopService(new Intent(MainActivity.this, LoggyService.class));
                 }
                 else {
-                    if (!SuRunner.hasRoot()) {
+                	if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) { 
+                   useRoot = false;
+                	}
+                	else if (!SuRunner.hasRoot()) {
+                		useRoot=true;
                         Helper.showAlertDialog(MainActivity.this, R.string.superuser, R.string.superuser_not_detected);
                         return;
                     }
@@ -68,8 +75,8 @@ public class MainActivity extends Activity {
                         public void run() {
                             SuRunner runner = new SuRunner();
                             runner.addCommand("echo test");
-                            runner.runSuCommand(MainActivity.this);
-                        };
+                            runner.runSuCommand(MainActivity.this, useRoot);
+                        }
                     }.start();
                     startService(new Intent(MainActivity.this, LoggyService.class));
                 }

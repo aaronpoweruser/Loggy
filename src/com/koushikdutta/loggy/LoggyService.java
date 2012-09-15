@@ -34,7 +34,7 @@ import com.koushikdutta.async.http.server.WebSocketCallback;
 
 public class LoggyService extends Service {
     AsyncHttpServer mServer;
-    
+    boolean useRoot;
     @Override
     public void onDestroy() {
         NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
@@ -48,6 +48,10 @@ public class LoggyService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         return START_STICKY;
+    }
+    public int onStartCommand(Intent intent, int flags, int startId, boolean useRoot) {
+    	this.useRoot =useRoot;
+        return onStartCommand(intent,flags,startId);
     }
 
     @Override
@@ -234,7 +238,7 @@ public class LoggyService extends Service {
                             String s;
                             SuRunner runner = new SuRunner();
                             runner.addCommand("/system/bin/logcat -t 500 -b radio -b system -b main -b events");
-                            process = runner.runSuCommand(LoggyService.this);
+                            process = runner.runSuCommand(LoggyService.this,useRoot);
                             DataInputStream dis = new DataInputStream(process.getInputStream());
                             while (null != (s = dis.readLine())) {
                                 if (s.length() == 0)
@@ -247,7 +251,7 @@ public class LoggyService extends Service {
                             // now get the running log
                             runner = new SuRunner();
                             runner.addCommand("/system/bin/logcat -b radio -b system -b main -b events");
-                            process = runner.runSuCommand(LoggyService.this);//Runtime.getRuntime().exec(new String[] { "su", "-c", "/system/bin/logcat -t 100" });
+                            process = runner.runSuCommand(LoggyService.this,useRoot);//Runtime.getRuntime().exec(new String[] { "su", "-c", "/system/bin/logcat -t 100" });
 
                             // also grab kmsg
                             new Thread() {
@@ -256,7 +260,7 @@ public class LoggyService extends Service {
                                         SuRunner krunner = new SuRunner();
                                         krunner.addCommand("echo catting kmsg");
                                         krunner.addCommand("cat /proc/kmsg");
-                                        kmsgProcess = krunner.runSuCommand(LoggyService.this);
+                                        kmsgProcess = krunner.runSuCommand(LoggyService.this,useRoot);
                                         DataInputStream dis = new DataInputStream(process.getInputStream());
                                         String s;
                                         while (null != (s = dis.readLine())) {

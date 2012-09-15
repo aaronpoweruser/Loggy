@@ -11,6 +11,7 @@ import android.os.Handler;
 public class SuRunner {
     HashMap<String, String> mEnvironment = new HashMap<String, String>();
     StringBuilder mCommands = new StringBuilder();
+   
     
     public static boolean hasRoot() {
         File f = new File("/system/bin/su");
@@ -24,7 +25,7 @@ public class SuRunner {
         mEnvironment.put(name, value);
     }
 
-    public void runSuCommandAsync(final Context context, final SuCommandCallback callback) {
+    public void runSuCommandAsync(final Context context, final SuCommandCallback callback, final boolean useRoot) {
         Handler handler = null;
         try {
             if (callback != null)
@@ -42,7 +43,7 @@ public class SuRunner {
             public void run() {
                 try {
                     callback.onStartBackground();
-                    Process p = runSuCommandAsync(context);
+                    Process p = runSuCommandAsync(context,useRoot);
                     if (p == null) {
                         return;
                     }
@@ -92,8 +93,9 @@ public class SuRunner {
     }
 
     public final static String SCRIPT_NAME = "surunner.sh";
+   
 
-    public Process runSuCommandAsync(Context context) {
+    public Process runSuCommandAsync(Context context, boolean useRoot) {
         try {
             // String scriptName = String.valueOf(System.currentTimeMillis());
             String scriptName = SCRIPT_NAME;
@@ -107,18 +109,22 @@ public class SuRunner {
             }
             fout.writeBytes(mCommands.toString());
             fout.close();
-
-            String[] args = new String[] { "su", "-c", ". " + context.getFilesDir().getAbsolutePath() + "/" + scriptName };
-            return Runtime.getRuntime().exec(args);
+            if (!useRoot){
+            	String[] args = new String[] { "", "-c", ". " + context.getFilesDir().getAbsolutePath() + "/" + scriptName }; 
+            	return Runtime.getRuntime().exec(args);
+            }
+             
+            	String[] args = new String[] { "su", "-c", ". " + context.getFilesDir().getAbsolutePath() + "/" + scriptName };
+            	return Runtime.getRuntime().exec(args);
         }
         catch (Exception ex) {
             return null;
         }
     }
 
-    public Process runSuCommand(Context context) {
+    public Process runSuCommand(Context context,boolean useRoot) {
         try {
-            return runSuCommandAsync(context);
+            return runSuCommandAsync(context,useRoot);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -126,9 +132,9 @@ public class SuRunner {
         }
     }
 
-    public int runSuCommandForResult(Context context) {
+    public int runSuCommandForResult(Context context , boolean useRoot) {
         try {
-            return runSuCommandAsync(context).waitFor();
+            return runSuCommandAsync(context,useRoot).waitFor();
         }
         catch (Exception e) {
             e.printStackTrace();
